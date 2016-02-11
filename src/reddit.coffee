@@ -3,32 +3,17 @@
 # Commands
 #   hubot reddit <subreddit> - Display most popular reddit post from subreddit
 
-bannedChannels = if process.env.HUBOT_BANNED_MEME_CHANNELS? then process.env.HUBOT_BANNED_MEME_CHANNELS.split(',') else undefined
-
-username = process.env.HUBOT_REDDIT_USERNAME
-password = process.env.HUBOT_REDDIT_PASSWORD
-clientID = process.env.HUBOT_REDDIT_CLIENT_ID
-clientSecret = process.env.HUBOT_REDDIT_CLIENT_SECRET
-
-oAuthToken = ''
-expiration = new Date().getMilliseconds()
-
-getOAuth = (now, res, callback) ->
-  clientPost = "grant_type=password&username=#{username}&password=#{password}"
-  robot.http("https://#{clientID}:#{clientSecret}@www.reddit.com/api/v1/access_token").post(clientPost) (err, rs, body) ->
-    oAuth = JSON.parse(body)
-    oAuthToken = oAuth.access_token
-    expiration = now + oAuth.expires_in
-    callback()
+blacklistedChannels = if process.env.HUBOT_BLACKLIST_MEME_CHANNELS? then process.env.HUBOT_BLACKLIST_MEME_CHANNELS.split(',') else undefined
+whitelistedNsfwChannels = if process.env.HUBOT_WHITELIST_NSFW_CHANNELS? then process.env.HUBOT_WHITELIST_NSFW_CHANNELS.split(',') else undefined
 
 searchSubreddit = (res) ->
   query = res.match[1]
-  res.http("https://oauth.reddit.com/r/#{query}/hot")
-  .header('Authorization', "bearer #{oAuthToken}")
-  .get() (err, rs, body) ->
+  isWhitelisted = !whitelistedNsfwChannels or whitelistedNsfwChannels.indexOf(query) > -1
+  res.http("https://api.reddit.com/r/#{query}/hot?limit=10").get() (err, rs, body) ->
     subreddit = JSON.parse(body)
     subreddit.data.children.some((child) ->
-      if (!child.data.stickied and !child.data.is_self)
+      data = child.data
+      if (!data.stickied and !data.is_self and (!data.over_18 or isWhitelisted))
         res.send child.data.url
         return true
     )
@@ -36,11 +21,7 @@ searchSubreddit = (res) ->
 
 module.exports = (robot) ->
   robot.respond /reddit (.*)/i, (res) ->
-    if (res.message and res.message.room and bannedChannels and bannedChannels.indexOf(res.message.room) != -1)
+    if (res.message and res.message.room and blacklistedChannels and blacklistedChannels.indexOf(res.message.room) != -1)
       return
-    now = new Date().getMilliseconds()
-    if (expiration - now < 0)
-      getOAuth now, res, () ->
-        searchSubreddit res
-    else 
-      searchSubreddit res
+
+    searchSubreddit res
