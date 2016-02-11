@@ -3,6 +3,8 @@
 # Commands
 #   hubot reddit <subreddit> - Display most popular reddit post from subreddit
 
+bannedChannels = if process.env.HUBOT_BANNED_MEME_CHANNELS? then process.env.HUBOT_BANNED_MEME_CHANNELS.split(',') else undefined
+
 username = process.env.HUBOT_REDDIT_USERNAME
 password = process.env.HUBOT_REDDIT_PASSWORD
 clientID = process.env.HUBOT_REDDIT_CLIENT_ID
@@ -34,6 +36,8 @@ searchSubreddit = (res) ->
 
 module.exports = (robot) ->
   robot.respond /reddit (.*)/i, (res) ->
+    if (res.message and res.message.room and bannedChannels and bannedChannels.indexOf(res.message.room) != -1)
+      return
     now = new Date().getMilliseconds()
     if (expiration - now < 0)
       getOAuth now, res, () ->
