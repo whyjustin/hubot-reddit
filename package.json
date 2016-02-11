@@ -1,0 +1,18 @@
+{
+  "name": "hubot-reddit",
+  "description": "A hubot script to search for top reddit posts",
+  "version": "0.0.1",
+  "author": "Justin Young <jry@ucla.edu>",
+  "license": "MIT",
+  "keywords": [
+    "hubot",
+    "hubot-scripts"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/whyjustin/hubot-reddit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/whyjustin/hubot-reddit/issues"
+  }
+}
